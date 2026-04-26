@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>Our First Stayover ✈️</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{-webkit-tap-highlight-color:transparent;box-sizing:border-box;}
+html,body,#root{height:100%;margin:0;padding:0;}
+body{
+  background:#fdf8f0;
+  -webkit-font-smoothing:antialiased;
+  font-family:'Hiragino Sans','Noto Sans JP',sans-serif;
+  overscroll-behavior:none;
+}
+/* ── Desktop: pretty background + phone frame ── */
+@media(min-width:480px){
+  body{
+    background:linear-gradient(145deg,#fef3e8 0%,#fde8ed 40%,#e8eefe 100%);
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;padding:24px;
+  }
+  #root{height:auto;width:100%;}
+  .app-shell{
+    height:min(820px,calc(100vh - 48px));
+    border-radius:40px;
+    box-shadow:0 32px 90px rgba(0,0,0,.18),0 0 0 8px rgba(255,255,255,.55);
+    overflow:hidden;
+  }
+}
+/* ── App shell: flex column ── */
+.app-shell{
+  display:flex;flex-direction:column;
+  height:100%;max-width:430px;margin:0 auto;
+  background:#fdf8f0;position:relative;
+  overflow:hidden;
+}
+.app-main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.app-nav{
+  flex-shrink:0;background:white;
+  border-top:1px solid #f0ede8;display:flex;
+  box-shadow:0 -2px 12px rgba(0,0,0,.06);
+}
+.edit-fab{
+  position:absolute;bottom:76px;right:16px;
+  width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:none;cursor:pointer;
+  box-shadow:0 4px 16px rgba(0,0,0,.18);
+  transition:transform .15s;z-index:20;
+}
+.edit-fab:active{transform:scale(.9);}
+.edit-banner{
+  background:#fff7ed;border-bottom:1px solid #fed7aa;
+  text-align:center;padding:6px;font-size:12px;
+  font-weight:700;color:#c2410c;flex-shrink:0;
+}
+.tab-content{animation:fadeSlide .18s ease-out both;}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.edit-input{background:rgba(255,247,230,.9);border:1.5px dashed #f97316;border-radius:8px;padding:4px 8px;width:100%;font-size:inherit;font-family:inherit;color:inherit;outline:none;resize:none;}
+.edit-input:focus{border-color:#fb923c;background:#fff7ed;}
+.edit-list-input{background:rgba(255,247,230,.8);border:1px dashed #f97316;border-radius:6px;padding:3px 6px;font-size:.75rem;font-family:inherit;outline:none;flex:1;}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#1c1917;color:white;padding:8px 18px;border-radius:999px;font-size:12px;z-index:9999;pointer-events:none;animation:toastIn .2s ease-out;}
+@keyframes toastIn{from{opacity:0;top:8px}to{opacity:1;top:16px}}
+::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback,createContext,useContext}=React;
+
+/* ── Icons ── */
+const Ic=({d,size=20,sw=1.8,cx=""})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" className={cx}><path d={d}/></svg>;
+const HomeIc=p=><svg {...{width:p.s||20,height:p.s||20}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={p.sw||1.8} strokeLinecap="round" strokeLinejoin="round" className={p.cx}><path d="M3 9.5L12 3l9 6.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
+const CalIc=p=><svg {...{width:p.s||20,height:p.s||20}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={p.sw||1.8} strokeLinecap="round" strokeLinejoin="round" className={p.cx}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+const BookIc=p=><svg {...{width:p.s||20,height:p.s||20}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={p.sw||1.8} strokeLinecap="round" strokeLinejoin="round" className={p.cx}><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>;
+const SparkIc=p=><svg {...{width:p.s||20,height:p.s||20}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={p.sw||1.8} strokeLinecap="round" strokeLinejoin="round" className={p.cx}><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>;
+const WifiIc=p=><svg width={p.s||18} height={p.s||18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>;
+const CopyIc=p=><svg width={p.s||13} height={p.s||13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>;
+const CheckIc=p=><svg width={p.s||13} height={p.s||13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><polyline points="20 6 9 17 4 12"/></svg>;
+const PlusIc=p=><svg width={p.s||13} height={p.s||13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+const MinusIc=p=><svg width={p.s||13} height={p.s||13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+const PencilIc=p=><svg width={p.s||16} height={p.s||16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
+const TrashIc=p=><svg width={p.s||13} height={p.s||13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>;
+const ResetIc=p=><svg width={p.s||14} height={p.s||14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>;
+const ShuffleIc=p=><svg width={p.s||15} height={p.s||15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>;
+const TrophyIc=p=><svg width={p.s||15} height={p.s||15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><path d="M6 9H4a2 2 0 000 4c0 2 1 3 2 4h12c1-1 2-2 2-4a2 2 0 000-4h-2"/><path d="M6 9V5a2 2 0 012-2h8a2 2 0 012 2v4"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/></svg>;
+const CartIc=p=><svg width={p.s||18} height={p.s||18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>;
+const GameIc=p=><svg width={p.s||18} height={p.s||18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="2"/></svg>;
+const ChevRIc=p=><svg width={p.s||14} height={p.s||14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><polyline points="9 18 15 12 9 6"/></svg>;
+const TrainIc=p=><svg width={p.s||15} height={p.s||15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16M12 3v8"/><path d="M8 19l-2 3M18 22l-2-3"/><line x1="9" y1="15" x2="9.01" y2="15"/><line x1="15" y1="15" x2="15.01" y2="15"/></svg>;
+const BusIc=p=><svg width={p.s||15} height={p.s||15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><path d="M8 6v6M3 6h18M16 6v6M3 12h18"/><rect x="3" y="3" width="18" height="15" rx="2"/><circle cx="7" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/></svg>;
+const NavIc=p=><svg width={p.s||15} height={p.s||15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>;
+const MapPinIc=p=><svg width={p.s||20} height={p.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={p.cx}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>;
+
+/* ── Default Data ── */
+const DEFAULT = {
+  home:{
+    title:'Our First Stayover',
+    subtitle:'in Nagaoka',
+    dateLabel:'May 5–6, 2025',
+    targetDate:'2025-05-05T09:50:00',
+    message:'はじめてのお泊まり、楽しもうね 🌙\nゆっくり、のんびり、二人の時間。',
+  },
+  schedule:{
+    day1Label:'5月5日（月）',
+    day2Label:'5月6日（火）',
+    day1:[
+      {time:'09:50',label:'上田駅発（しなの鉄道）',note:'しなの鉄道で長野へ',icon:'train'},
+      {time:'10:34',label:'長野駅着',note:'',icon:'train'},
+      {time:'10:50',label:'長野駅前発（高速バス 0003便）',note:'高速バスで長岡へ約2.5時間',icon:'bus'},
+      {time:'13:19',label:'長岡北バス停着',note:'ここから徒歩22分',icon:'nav'},
+      {time:'13:20',label:'アパートへ移動',note:'県道69号経由・徒歩22分',icon:'nav'},
+      {time:'13:45',label:'アパート到着・開会宣言 🎉',note:'やっと着いた〜！',icon:'home'},
+      {time:'15:00',label:'ボドゲ・桃鉄タイム',note:'全力で遊ぶ時間',icon:'game'},
+      {time:'17:00',label:'買い出し作戦会議',note:'夕食の食材を買いに',icon:'cart'},
+      {time:'18:30',label:'クッキング & 夕食',note:'一緒に作ろう',icon:'cook'},
+    ],
+    day2:[
+      {time:'09:00',label:'朝食作り',note:'のんびり朝ごはん',icon:'cook'},
+      {time:'11:30',label:'お散歩・長岡造形大学周辺散策',note:'緑の中を歩こう',icon:'nav'},
+      {time:'13:25',label:'長岡造形大学前バス発',note:'長岡駅大手口行き',icon:'bus'},
+      {time:'13:50',label:'長岡駅着',note:'',icon:'nav'},
+      {time:'14:10',label:'長岡駅発（新幹線）',note:'また会おうね 👋',icon:'train'},
+    ],
+  },
+  guide:{
+    wifi:{ssid:'YOUR_SSID',password:'YOUR_PASSWORD'},
+    amenities:['タオル','歯ブラシ','ドライヤー','スキンケア用品'],
+    rules:[
+      {title:'ゴミの分別',body:'燃えるゴミ・ペットボトル・缶・瓶は分けてね。袋は用意してあるよ。'},
+      {title:'夜の声量',body:'夜22時以降はちょっと静かめに。壁が薄いので 🙏'},
+      {title:'お風呂',body:'シャワー・バスタブOK！使った後はざっと流しておいてもらえると助かる。'},
+    ],
+  },
+  activity:{
+    playerNames:['ホスト','ゲスト'],
+    shopping:['夕食食材（肉・野菜）','朝食食材（卵・パン）','飲み物（ジュース・お茶）','お菓子','デザート','調味料・調味酒'],
+    recipes:['カレー','パスタ','餃子','チャーハン','鍋','オムライス','ピザ','たこ焼き','唐揚げ','グラタン'],
+    movies:['君の名は','天気の子','ハウルの動く城','となりのトトロ','コナン（最新作）','すずめの戸締まり','千と千尋の神隠し','もののけ姫'],
+  },
+};
+
+/* ── Context ── */
+const Ctx = React.createContext();
+
+function useData(){return useContext(Ctx);}
+
+/* ── Toast ── */
+function showToast(msg){
+  const el=document.createElement('div');
+  el.className='toast';el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1800);
+}
+
+/* ── useLocalStorage ── */
+function useLS(key,def){
+  const [v,sv]=useState(()=>{
+    try{const s=localStorage.getItem(key);return s?JSON.parse(s):def;}catch{return def;}
+  });
+  const set=(nv)=>{sv(nv);try{localStorage.setItem(key,JSON.stringify(nv));}catch{}};
+  return[v,set];
+}
+
+/* ── EditableText ── */
+function ET({val,onChange,multi=false,cls='',placeholder=''}){
+  const{edit}=useData();
+  if(!edit)return <span className={cls} style={{whiteSpace:'pre-wrap'}}>{val||<span className="text-stone-300">{placeholder}</span>}</span>;
+  if(multi)return<textarea className={`edit-input ${cls}`} value={val} rows={3} onChange={e=>onChange(e.target.value)} placeholder={placeholder}/>;
+  return<input className={`edit-input ${cls}`} value={val} onChange={e=>onChange(e.target.value)} placeholder={placeholder}/>;
+}
+
+/* ── EditableList ── */
+function EL({items,onChange,placeholder='アイテム'}){
+  const{edit}=useData();
+  if(!edit)return null;
+  return(
+    <div className="mt-3 space-y-1.5 pt-3 border-t border-orange-100">
+      <p className="text-xs text-orange-400 font-medium mb-2">リストを編集</p>
+      {items.map((it,i)=>(
+        <div key={i} className="flex items-center gap-2">
+          <input className="edit-list-input" value={it} onChange={e=>{const n=[...items];n[i]=e.target.value;onChange(n);}} placeholder={placeholder}/>
+          <button onClick={()=>onChange(items.filter((_,idx)=>idx!==i))} className="w-6 h-6 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0"><TrashIc s={11} cx="text-red-400"/></button>
+        </div>
+      ))}
+      <button onClick={()=>onChange([...items,''])} className="flex items-center gap-1.5 text-xs text-orange-500 mt-1 font-medium">
+        <PlusIc s={12} cx="text-orange-400"/> 追加
+      </button>
+    </div>
+  );
+}
+
+/* ── Schedule icon map ── */
+function SchedIcon({type,size=15}){
+  const m={train:<TrainIc s={size}/>,bus:<BusIc s={size}/>,nav:<NavIc s={size}/>,home:<HomeIc s={size}/>,game:<GameIc s={size}/>,cart:<CartIc s={size}/>,cook:<span style={{fontSize:size-2}}>🍳</span>};
+  return m[type]||<NavIc s={size}/>;
+}
+
+/* ── Schedule item status ── */
+function toMin(t){const[h,m]=t.split(':').map(Number);return h*60+m;}
+function getStatus(items,idx,now,day){
+  const m=now.getMonth()+1,d=now.getDate();
+  if(m!==5||d!==day)return m>5||(m===5&&d>day)?'past':'future';
+  const nowMin=now.getHours()*60+now.getMinutes();
+  const s=toMin(items[idx].time),e=idx+1<items.length?toMin(items[idx+1].time):1440;
+  if(nowMin>=s&&nowMin<e)return'current';
+  return nowMin>=e?'past':'future';
+}
+
+/* ──────────────────────────────
+   HOME TAB
+────────────────────────────── */
+function HomeTab({onNavigate}){
+  const{data,setData,edit}=useData();
+  const hd=data.home;
+  const upHome=p=>setData({...data,home:{...hd,...p}});
+  const[now,setNow]=useState(new Date());
+  const[diff,setDiff]=useState(new Date(hd.targetDate)-Date.now());
+  useEffect(()=>{
+    const id=setInterval(()=>{setNow(new Date());setDiff(new Date(hd.targetDate)-Date.now());},1000);
+    return()=>clearInterval(id);
+  },[hd.targetDate]);
+
+  const total=Math.max(0,Math.floor(diff/1000));
+  const d=Math.floor(total/86400),h=Math.floor((total%86400)/3600),m=Math.floor((total%3600)/60),s=total%60;
+  const pad=n=>String(n).padStart(2,'0');
+
+  const isEvent=now.getMonth()+1===5&&(now.getDate()===5||now.getDate()===6);
+  const nowMin=now.getHours()*60+now.getMinutes();
+  const allItems=[...data.schedule.day1.map(i=>({...i,day:5})),...data.schedule.day2.map(i=>({...i,day:6}))];
+  const curItem=isEvent?allItems.filter(i=>i.day===now.getDate()).reduce((acc,it,idx,arr)=>{
+    const s=toMin(it.time),e=idx+1<arr.length?toMin(arr[idx+1].time):1440;
+    return nowMin>=s&&nowMin<e?it:acc;
+  },null):null;
+
+  return(
+    <div className="tab-content px-5 pt-8 pb-4 space-y-4">
+      {/* Hero */}
+      <div className="text-center space-y-1 pb-2">
+        <div className="text-4xl mb-3">🏠✨</div>
+        <h1 className="text-xl font-bold text-stone-800">
+          <ET val={hd.title} onChange={v=>upHome({title:v})} placeholder="タイトル"/>
+        </h1>
+        <p className="text-sm font-semibold" style={{color:'#fb7185'}}>
+          <ET val={hd.subtitle} onChange={v=>upHome({subtitle:v})} placeholder="サブタイトル"/>
+        </p>
+        <p className="text-xs text-stone-400">
+          <ET val={hd.dateLabel} onChange={v=>upHome({dateLabel:v})} placeholder="日付"/>
+        </p>
+        {edit&&<div className="mt-2"><p className="text-xs text-orange-400 mb-1">目標日時</p><input className="edit-input text-xs text-center" value={hd.targetDate} onChange={e=>upHome({targetDate:e.target.value})} placeholder="2025-05-05T09:50:00"/></div>}
+      </div>
+
+      {/* Countdown / Now */}
+      {diff>0&&!isEvent?(
+        <div className="rounded-2xl p-5 border text-center" style={{background:'linear-gradient(135deg,#fff1f2,#fffbeb)',borderColor:'#fecdd3'}}>
+          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{color:'#fb7185'}}>✈️ Countdown</p>
+          <div className="flex justify-center gap-4">
+            {[['日',d],['時',h],['分',m],['秒',s]].map(([u,v])=>(
+              <div key={u} className="flex flex-col items-center min-w-[44px]">
+                <div className="bg-white rounded-xl w-full py-2 shadow-sm">
+                  <span className="text-2xl font-bold tabular-nums" style={{color:'#f43f5e'}}>{pad(v)}</span>
+                </div>
+                <span className="text-xs text-stone-400 mt-1">{u}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-stone-400 mt-3">{hd.dateLabel} まで</p>
+        </div>
+      ):isEvent&&curItem?(
+        <div className="rounded-2xl p-4 border" style={{background:'linear-gradient(135deg,#fff1f2,#fffbeb)',borderColor:'#fda4af'}}>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{background:'#fb7185'}}>NOW</span>
+            <span className="text-xs text-stone-400">現在の予定</span>
+          </div>
+          <p className="text-base font-bold text-stone-800">{curItem.time} — {curItem.label}</p>
+        </div>
+      ):isEvent?(
+        <div className="rounded-2xl p-4 border border-amber-100 bg-amber-50 text-center">
+          <p className="text-sm text-stone-600">全スケジュール完了！お疲れさま 🎊</p>
+        </div>
+      ):null}
+
+      {/* Quick cards */}
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          {id:'schedule',label:'スケジュール',sub:'1泊2日の行程',Icon:<CalIc cx="text-sky-400" s={22}/>, grad:'from-sky-50 to-sky-100/50'},
+          {id:'guide',label:'アパート案内',sub:'Wi-Fi・設備情報',Icon:<MapPinIc cx="text-emerald-400" s={22}/>, grad:'from-emerald-50 to-emerald-100/50'},
+        ].map(({id,label,sub,Icon,grad})=>(
+          <button key={id} onClick={()=>onNavigate(id)}
+            className={`bg-gradient-to-br ${grad} rounded-2xl p-4 border border-white text-left active:scale-95 transition-transform shadow-sm`}>
+            <div className="mb-2">{Icon}</div>
+            <p className="text-xs font-bold text-stone-700">{label}</p>
+            <p className="text-xs text-stone-400 mt-0.5">{sub}</p>
+          </button>
+        ))}
+      </div>
+
+      {/* Message */}
+      <div className="bg-white rounded-2xl p-5 border border-stone-100 shadow-sm">
+        <p className="text-sm text-stone-600 leading-relaxed">
+          <ET val={hd.message} onChange={v=>upHome({message:v})} multi placeholder="メッセージ"/>
+        </p>
+        <button onClick={()=>onNavigate('activity')} className="mt-3 flex items-center gap-1 text-xs font-medium" style={{color:'#fb7185'}}>
+          アクティビティを見る <ChevRIc/>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────
+   SCHEDULE TAB
+────────────────────────────── */
+function SchedItem({item,idx,items,now,day,edit,onChange,onDelete}){
+  const st=getStatus(items,idx,now,day);
+  const isLast=idx===items.length-1;
+  return(
+    <div className="flex gap-3">
+      <div className="flex flex-col items-center">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10 transition-all"
+          style={st==='current'?{background:'#fb7185',boxShadow:'0 4px 14px #fda4af80',outline:'4px solid #ffe4e6'}:
+                 st==='past'?{background:'#e7e5e4'}:{background:'white',border:'2px solid #e7e5e4'}}>
+          <span style={{color:st==='current'?'white':st==='past'?'#a8a29e':'#a8a29e',display:'flex'}}>
+            <SchedIcon type={item.icon} size={14}/>
+          </span>
+        </div>
+        {!isLast&&<div className="w-0.5 flex-1 my-1 rounded-full" style={{background:st==='past'?'#e7e5e4':'#f0ede8',minHeight:'16px'}}/>}
+      </div>
+      <div className={`flex-1 pb-3 ${st==='past'&&!edit?'opacity-40':''}`}>
+        <div className={`rounded-2xl p-3 transition-all ${st==='current'?'border shadow-sm':''}`}
+          style={st==='current'?{background:'#fff1f2',borderColor:'#fda4af'}:{}}>
+          <div className="flex items-baseline gap-2">
+            {edit
+              ?<input className="edit-input text-sm font-bold tabular-nums w-20" value={item.time} onChange={e=>onChange({...item,time:e.target.value})}/>
+              :<span className="text-sm font-bold tabular-nums" style={{color:st==='current'?'#f43f5e':'#78716c'}}>{item.time}</span>
+            }
+            {st==='current'&&!edit&&<span className="text-xs px-2 py-0.5 rounded-full font-bold text-white" style={{background:'#fb7185',fontSize:'10px'}}>NOW</span>}
+          </div>
+          {edit
+            ?<div className="space-y-1 mt-1">
+                <input className="edit-input text-sm font-medium w-full" value={item.label} onChange={e=>onChange({...item,label:e.target.value})} placeholder="ラベル"/>
+                <input className="edit-input text-xs w-full" value={item.note||''} onChange={e=>onChange({...item,note:e.target.value})} placeholder="メモ（任意）"/>
+                <div className="flex gap-2 mt-1">
+                  <select className="edit-list-input text-xs" value={item.icon||'nav'} onChange={e=>onChange({...item,icon:e.target.value})}>
+                    {['train','bus','nav','home','game','cart','cook'].map(v=><option key={v} value={v}>{v}</option>)}
+                  </select>
+                  <button onClick={onDelete} className="px-2 py-1 rounded-lg bg-red-50 text-red-400 text-xs flex items-center gap-1"><TrashIc s={11}/> 削除</button>
+                </div>
+              </div>
+            :<div>
+                <p className="text-sm font-semibold mt-0.5 text-stone-700">{item.label}</p>
+                {item.note&&<p className="text-xs text-stone-400 mt-0.5">{item.note}</p>}
+              </div>
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScheduleTab(){
+  const{data,setData,edit}=useData();
+  const[now,setNow]=useState(new Date());
+  useEffect(()=>{const id=setInterval(()=>setNow(new Date()),60000);return()=>clearInterval(id);},[]);
+
+  const upDay=(day,items)=>setData({...data,schedule:{...data.schedule,[day]:items}});
+
+  return(
+    <div className="tab-content px-5 pt-8 pb-4">
+      <h2 className="text-lg font-bold text-stone-800 mb-0.5">Schedule</h2>
+      <p className="text-xs text-stone-400 mb-6">1泊2日の旅程</p>
+
+      {[{key:'day1',day:5,label:data.schedule.day1Label,color:'#fb7185',labelKey:'day1Label'},
+        {key:'day2',day:6,label:data.schedule.day2Label,color:'#38bdf8',labelKey:'day2Label'}].map(({key,day,label,color,labelKey})=>(
+        <div key={key} className="mb-7">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-white text-xs font-bold px-3 py-1 rounded-full" style={{background:color}}>
+              {key==='day1'?'Day 1':'Day 2'}
+            </span>
+            {edit
+              ?<input className="edit-list-input" value={label} onChange={e=>setData({...data,schedule:{...data.schedule,[labelKey]:e.target.value}})}/>
+              :<span className="text-xs text-stone-500">{label}</span>
+            }
+          </div>
+          <div>
+            {data.schedule[key].map((it,i)=>(
+              <SchedItem key={i} item={it} idx={i} items={data.schedule[key]} now={now} day={day} edit={edit}
+                onChange={nit=>{const a=[...data.schedule[key]];a[i]=nit;upDay(key,a);}}
+                onDelete={()=>upDay(key,data.schedule[key].filter((_,idx)=>idx!==i))}/>
+            ))}
+            {edit&&(
+              <button onClick={()=>upDay(key,[...data.schedule[key],{time:'00:00',label:'新しい予定',note:'',icon:'nav'}])}
+                className="flex items-center gap-2 text-xs text-orange-500 font-medium mt-2 ml-10">
+                <PlusIc s={12} cx="text-orange-400"/> 予定を追加
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ──────────────────────────────
+   GUIDE TAB
+────────────────────────────── */
+function CopyBtn({value}){
+  const[copied,setCopied]=useState(false);
+  const handle=async()=>{try{await navigator.clipboard.writeText(value);}catch{}setCopied(true);setTimeout(()=>setCopied(false),2000);};
+  return(
+    <button onClick={handle} className="flex items-center gap-2 px-3 py-2 rounded-xl font-mono text-sm text-stone-700 active:scale-95 transition-transform border border-stone-100 bg-stone-50 hover:bg-stone-100 w-full">
+      <span className="flex-1 text-left truncate">{value}</span>
+      <span className="flex-shrink-0">{copied?<CheckIc s={14} cx="text-emerald-500"/>:<CopyIc s={14} cx="text-stone-400"/>}</span>
+    </button>
+  );
+}
+
+function GuideTab(){
+  const{data,setData,edit}=useData();
+  const gd=data.guide;
+  const upGuide=p=>setData({...data,guide:{...gd,...p}});
+
+  return(
+    <div className="tab-content px-5 pt-8 pb-4 space-y-4">
+      <div><h2 className="text-lg font-bold text-stone-800 mb-0.5">Guide</h2><p className="text-xs text-stone-400">アパート案内</p></div>
+
+      {/* Wi-Fi */}
+      <div className="bg-white rounded-2xl p-5 border border-stone-100 shadow-sm space-y-3">
+        <div className="flex items-center gap-2"><WifiIc cx="text-sky-400"/><h3 className="text-sm font-bold text-stone-700">Wi-Fi</h3></div>
+        <div className="space-y-2.5">
+          {[['SSID','ssid'],['Password','password']].map(([label,key])=>(
+            <div key={key}>
+              <p className="text-xs text-stone-400 uppercase tracking-wide mb-1.5">{label}</p>
+              {edit
+                ?<input className="edit-input text-sm font-mono" value={gd.wifi[key]} onChange={e=>upGuide({wifi:{...gd.wifi,[key]:e.target.value}})}/>
+                :<CopyBtn value={gd.wifi[key]}/>
+              }
+            </div>
+          ))}
+        </div>
+        {!edit&&<p className="text-xs text-stone-400">タップでコピー</p>}
+      </div>
+
+      {/* Amenities */}
+      <div className="bg-white rounded-2xl p-5 border border-stone-100 shadow-sm">
+        <h3 className="text-sm font-bold text-stone-700 mb-3">アメニティ</h3>
+        <div className="grid grid-cols-2 gap-2">
+          {gd.amenities.map((a,i)=>(
+            <div key={i} className="flex items-center gap-2 rounded-xl px-3 py-2.5 border" style={{background:'#ecfdf5',borderColor:'#a7f3d0'}}>
+              <span className="text-xs text-stone-700 flex-1">{a}</span>
+              <CheckIc s={12} cx="text-emerald-400"/>
+            </div>
+          ))}
+        </div>
+        <EL items={gd.amenities} onChange={v=>upGuide({amenities:v})} placeholder="アメニティ名"/>
+      </div>
+
+      {/* Rules */}
+      <div className="bg-white rounded-2xl p-5 border border-stone-100 shadow-sm space-y-4">
+        <h3 className="text-sm font-bold text-stone-700">ハウスルール</h3>
+        {gd.rules.map((r,i)=>(
+          <div key={i} className="flex gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-sm" style={{background:'#fffbeb'}}>📌</div>
+            <div className="flex-1">
+              {edit
+                ?<div className="space-y-1">
+                    <input className="edit-input text-xs font-bold" value={r.title} onChange={e=>{const n=[...gd.rules];n[i]={...r,title:e.target.value};upGuide({rules:n});}}/>
+                    <textarea className="edit-input text-xs" rows={2} value={r.body} onChange={e=>{const n=[...gd.rules];n[i]={...r,body:e.target.value};upGuide({rules:n});}}/>
+                    <button onClick={()=>upGuide({rules:gd.rules.filter((_,idx)=>idx!==i)})} className="text-xs text-red-400 flex items-center gap-1"><TrashIc s={11}/> 削除</button>
+                  </div>
+                :<div>
+                    <p className="text-xs font-bold text-stone-700">{r.title}</p>
+                    <p className="text-xs text-stone-500 mt-0.5 leading-relaxed">{r.body}</p>
+                  </div>
+              }
+            </div>
+          </div>
+        ))}
+        {edit&&(
+          <button onClick={()=>upGuide({rules:[...gd.rules,{title:'新しいルール',body:''}]})}
+            className="flex items-center gap-1.5 text-xs text-orange-500 font-medium">
+            <PlusIc s={12} cx="text-orange-400"/> ルールを追加
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────
+   ACTIVITY TAB
+────────────────────────────── */
+function ShoppingList(){
+  const{data,setData,edit}=useData();
+  const items=data.activity.shopping;
+  const[checked,setChecked]=useState(()=>items.map(()=>false));
+  const toggle=i=>setChecked(p=>{const n=[...p];n[i]=!n[i];return n;});
+  const reset=()=>setChecked(items.map(()=>false));
+  const done=checked.filter(Boolean).length;
+
+  const upList=v=>{setData({...data,activity:{...data.activity,shopping:v}});setChecked(v.map(()=>false));};
+
+  return(
+    <div className="bg-white rounded-2xl p-5 border border-stone-100 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2"><CartIc cx="text-emerald-400"/><h3 className="text-sm font-bold text-stone-700">買い出しリスト</h3></div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">{done}/{items.length}</span>
+          <button onClick={reset} className="w-7 h-7 rounded-lg bg-stone-50 flex items-center justify-center active:scale-90 transition-transform border border-stone-100"><ResetIc cx="text-stone-400"/></button>
+        </div>
+      </div>
+      <div className="space-y-1">
+        {items.map((it,i)=>(
+          <button key={i} onClick={()=>!edit&&toggle(i)}
+            className="w-full flex items-center gap-3 px-2 py-2.5 rounded-xl active:scale-98 transition-all text-left hover:bg-stone-50">
+            <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+              style={{background:checked[i]&&!edit?'#34d399':'white',borderColor:checked[i]&&!edit?'#34d399':'#d6d3d1'}}>
+              {checked[i]&&!edit&&<svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3.2 6L8 1" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            </div>
+            <span className="text-sm flex-1" style={{textDecoration:checked[i]&&!edit?'line-through':'none',color:checked[i]&&!edit?'#d6d3d1':'#44403c'}}>{it}</span>
+          </button>
+        ))}
+      </div>
+      <EL items={items} onChange={upList} placeholder="買い物リストアイテム"/>
+    </div>
+  );
+}
+
+function GameScore(){
+  const{data,setData,edit}=useData();
+  const act=data.activity;
+  const[scores,setScores]=useState([{wins:0,asset:''},{wins:0,asset:''}]);
+  const[logs,setLogs]=useState([]);
+  const[game,setGame]=useState('桃鉄');
+  const upWins=(i,d)=>setScores(p=>p.map((s,idx)=>idx===i?{...s,wins:Math.max(0,s.wins+d)}:s));
+  const upAsset=(i,v)=>setScores(p=>p.map((s,idx)=>idx===i?{...s,asset:v}:s));
+  const addLog=()=>{
+    const w=scores[0].wins>scores[1].wins?act.playerNames[0]:scores[1].wins>scores[0].wins?act.playerNames[1]:'引き分け';
+    setLogs(p=>[{game,winner:w,s0:`${act.playerNames[0]} ${scores[0].wins}勝`,s1:`${act.playerNames[1]} ${scores[1].wins}勝`,time:new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})},...p].slice(0,8));
+    showToast(`🏆 ${w} の勝ち！`);
+  };
+  const upNames=v=>setData({...data,activity:{...act,playerNames:v}});
+
+  return(
+    <div className="bg-white rounded-2xl p-5 border border-stone-100 shadow-sm space-y-4">
+      <div className="flex items-center gap-2"><GameIc cx="text-purple-400"/><h3 className="text-sm font-bold text-stone-700">桃鉄・ボドゲ戦績</h3></div>
+      <div className="flex gap-2 flex-wrap">
+        {['桃鉄','カタン','ナナ','UNO'].map(g=>(
+          <button key={g} onClick={()=>setGame(g)} className="text-xs px-3 py-1.5 rounded-full border transition-all font-medium"
+            style={{background:game===g?'#a78bfa':'white',borderColor:game===g?'#a78bfa':'#e7e5e4',color:game===g?'white':'#78716c'}}>{g}</button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {scores.map((p,i)=>(
+          <div key={i} className="rounded-2xl p-3 space-y-2.5" style={{background:'#fafaf9',border:'1px solid #f0ede8'}}>
+            <p className="text-xs font-bold text-stone-600 text-center">
+              {edit
+                ?<input className="edit-list-input text-center w-full" value={act.playerNames[i]} onChange={e=>{const n=[...act.playerNames];n[i]=e.target.value;upNames(n);}}/>
+                :act.playerNames[i]
+              }
+            </p>
+            <div className="flex items-center justify-center gap-2">
+              <button onClick={()=>upWins(i,-1)} className="w-8 h-8 rounded-full flex items-center justify-center border border-stone-200 bg-white active:scale-90 transition-transform"><MinusIc cx="text-stone-500"/></button>
+              <span className="text-2xl font-bold text-stone-800 tabular-nums w-10 text-center">{p.wins}</span>
+              <button onClick={()=>upWins(i,1)} className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform" style={{background:'#a78bfa'}}><PlusIc cx="text-white"/></button>
+            </div>
+            <p className="text-xs text-stone-400 text-center">勝利数</p>
+            <input type="text" placeholder="資産額を入力" value={p.asset} onChange={e=>upAsset(i,e.target.value)}
+              className="w-full text-xs text-center rounded-xl px-2 py-2 text-stone-700 focus:outline-none bg-white border border-stone-100"/>
+          </div>
+        ))}
+      </div>
+      <button onClick={addLog} className="w-full text-white text-sm font-bold py-3 rounded-2xl active:scale-98 transition-transform flex items-center justify-center gap-2 shadow-sm" style={{background:'linear-gradient(135deg,#a78bfa,#8b5cf6)'}}>
+        <TrophyIc/> このゲームを記録する
+      </button>
+      {logs.length>0&&(
+        <div className="space-y-2">
+          <p className="text-xs text-stone-400 font-semibold">戦績ログ</p>
+          {logs.map((l,i)=>(
+            <div key={i} className="flex items-center justify-between rounded-xl px-3 py-2.5" style={{background:'#fafaf9',border:'1px solid #f0ede8'}}>
+              <div><p className="text-xs font-bold text-stone-700">{l.game}</p><p className="text-xs text-stone-400">{l.s0} / {l.s1}</p></div>
+              <div className="text-right"><p className="text-xs font-bold" style={{color:'#a78bfa'}}>{l.winner}</p><p className="text-xs text-stone-400">{l.time}</p></div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GachaCard({title,listKey,color,bg,border}){
+  const{data,setData,edit}=useData();
+  const items=data.activity[listKey];
+  const[result,setResult]=useState(null);
+  const[spin,setSpin]=useState(false);
+  const go=()=>{setSpin(true);setResult(null);setTimeout(()=>{setResult(items[Math.floor(Math.random()*items.length)]);setSpin(false);},380);};
+  return(
+    <div className="bg-white rounded-2xl p-5 border border-stone-100 shadow-sm">
+      <h3 className="text-sm font-bold text-stone-700 mb-4">{title}</h3>
+      <button onClick={go} disabled={spin||items.length===0} className="w-full py-3 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-sm"
+        style={{background:`linear-gradient(135deg,${color},${color}cc)`,opacity:spin||items.length===0?0.7:1}}>
+        <ShuffleIc cx={spin?'animate-spin':''}/>
+        {spin?'ガチャ中...':`${title}！`}
+      </button>
+      {result&&(
+        <div className="mt-3 rounded-2xl py-4 text-center border" style={{background:bg,borderColor:border}}>
+          <p className="text-2xl font-bold" style={{color}}>{result}</p>
+        </div>
+      )}
+      <EL items={items} onChange={v=>setData({...data,activity:{...data.activity,[listKey]:v}})} placeholder="候補を追加"/>
+    </div>
+  );
+}
+
+function ActivityTab(){
+  return(
+    <div className="tab-content px-5 pt-8 pb-4 space-y-4">
+      <div><h2 className="text-lg font-bold text-stone-800 mb-0.5">Activity</h2><p className="text-xs text-stone-400">お楽しみコーナー</p></div>
+      <ShoppingList/>
+      <GameScore/>
+      <GachaCard title="🍳 何作る？ガチャ" listKey="recipes" color="#fb7185" bg="#fff1f2" border="#fecdd3"/>
+      <GachaCard title="🎬 何観る？ガチャ"  listKey="movies"  color="#38bdf8" bg="#f0f9ff" border="#bae6fd"/>
+    </div>
+  );
+}
+
+/* ──────────────────────────────
+   APP
+────────────────────────────── */
+const TABS=[
+  {id:'home',     label:'Home',     Ico:HomeIc},
+  {id:'schedule', label:'Schedule', Ico:CalIc},
+  {id:'guide',    label:'Guide',    Ico:BookIc},
+  {id:'activity', label:'Activity', Ico:SparkIc},
+];
+const COMPS={home:HomeTab,schedule:ScheduleTab,guide:GuideTab,activity:ActivityTab};
+
+function App(){
+  const[tab,setTab]=useState('home');
+  const[edit,setEdit]=useState(false);
+  const[data,setData]=useLS('stayover-v2',DEFAULT);
+
+  const saveData=(nd)=>{setData(nd);showToast('保存しました ✓');};
+  const toggleEdit=()=>{
+    if(edit)showToast('変更を保存しました ✓');
+    setEdit(e=>!e);
+  };
+
+  const Comp=COMPS[tab];
+  return(
+    <Ctx.Provider value={{data,setData:saveData,edit}}>
+      <div className="app-shell">
+        {/* Edit mode banner */}
+        {edit&&<div className="edit-banner">✏️ 編集モード</div>}
+
+        {/* Scrollable content */}
+        <main className="app-main">
+          <Comp onNavigate={setTab}/>
+        </main>
+
+        {/* Floating edit button */}
+        <button onClick={toggleEdit} className="edit-fab"
+          style={{background:edit?'#f97316':'#1c1917',color:'white'}}>
+          {edit?<CheckIc s={20} cx="text-white"/>:<PencilIc s={16} cx="text-white"/>}
+        </button>
+
+        {/* Tab bar — not fixed, sits at bottom of flex column */}
+        <nav className="app-nav">
+          {TABS.map(({id,label,Ico})=>{
+            const on=tab===id;
+            return(
+              <button key={id} onClick={()=>setTab(id)}
+                style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',paddingTop:'8px',paddingBottom:'12px',gap:'3px',border:'none',background:'none',cursor:'pointer',transition:'color .15s',color:on?'#fb7185':'#a8a29e'}}>
+                <Ico s={21} sw={on?2.4:1.8}/>
+                <span style={{fontSize:'10px',fontWeight:on?700:400,letterSpacing:'0.04em'}}>{label}</span>
+                {on&&<span style={{width:'4px',height:'4px',borderRadius:'50%',background:'#fb7185',marginTop:'-1px'}}/>}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+    </Ctx.Provider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
