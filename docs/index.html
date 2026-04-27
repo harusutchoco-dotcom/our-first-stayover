@@ -25,20 +25,25 @@ body{
   color:var(--text);
   letter-spacing:.04em;
 }
-/* ── App shell ── */
+/* ── App shell (mobile) ── */
 .app-shell{
   display:flex;flex-direction:column;
   height:100%;width:100%;max-width:480px;margin:0 auto;
   background:var(--bg);position:relative;overflow:hidden;
 }
-/* ── Desktop ── */
+/* ── Desktop: page scroll ── */
 @media(min-width:768px){
-  html,body,#root{height:100vh;}
-  .app-shell{max-width:100%;}
+  html,body{height:auto;min-height:100%;}
+  #root{height:auto;}
+  .app-shell{
+    max-width:100%;height:auto;min-height:100vh;
+    overflow:visible;
+  }
+  .site-header{display:flex !important;position:sticky;top:0;z-index:100;}
+  .app-main{overflow-y:visible;flex:none;}
   .app-main>*{max-width:920px;margin-left:auto;margin-right:auto;width:100%;}
   .app-nav{display:none !important;}
-  .site-header{display:flex !important;}
-  .edit-fab{bottom:28px;right:40px;}
+  .edit-fab{position:fixed;bottom:28px;right:40px;}
 }
 /* ── Site header (desktop only) ── */
 .site-header{
@@ -366,17 +371,35 @@ function HomeTab({onNavigate}){
 /* ──────────────────────────────
    SCHEDULE TAB
 ────────────────────────────── */
-function SchedItem({item,idx,items,now,day,edit,onChange,onDelete}){
+function SchedItem({item,idx,items,now,day,edit,onChange,onDelete,onDragStart,onDragOver,onDrop,isDragging,isOver}){
   const st=getStatus(items,idx,now,day);
   const isLast=idx===items.length-1;
   return(
-    <div className="flex gap-3">
-      <div className="flex flex-col items-center">
+    <div
+      draggable={edit}
+      onDragStart={onDragStart}
+      onDragOver={e=>{e.preventDefault();onDragOver();}}
+      onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget))onDragOver(false);}}
+      onDrop={e=>{e.preventDefault();onDrop();}}
+      onDragEnd={()=>onDragOver(false)}
+      style={{
+        display:'flex',gap:12,
+        opacity:isDragging?.3:1,
+        transition:'opacity .15s',
+        cursor:edit?'grab':'default',
+        borderTop:isOver?'2px solid var(--navy)':'2px solid transparent',
+      }}
+    >
+      {/* Left: icon + line */}
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+        {edit&&(
+          <div style={{color:'var(--border)',fontSize:14,lineHeight:1,marginBottom:2,cursor:'grab',userSelect:'none'}}>⠿</div>
+        )}
         <div style={{
           width:28,height:28,borderRadius:2,display:'flex',alignItems:'center',justifyContent:'center',
           flexShrink:0,zIndex:10,transition:'all .2s',
           background:st==='current'?'var(--accent)':st==='past'?'var(--border)':'var(--surface)',
-          border:st==='current'?'none':`1px solid ${st==='past'?'var(--border)':'var(--border)'}`,
+          border:`1px solid ${st==='current'?'transparent':'var(--border)'}`,
           boxShadow:st==='current'?'0 2px 10px rgba(124,28,44,.35)':'none',
         }}>
           <span style={{color:st==='current'?'white':'var(--muted)',display:'flex'}}>
@@ -385,6 +408,7 @@ function SchedItem({item,idx,items,now,day,edit,onChange,onDelete}){
         </div>
         {!isLast&&<div style={{width:1,flex:1,margin:'3px 0',background:'var(--border-lt)',minHeight:14}}/>}
       </div>
+      {/* Right: content */}
       <div style={{flex:1,paddingBottom:12,opacity:st==='past'&&!edit?.4:1}}>
         <div style={{
           borderRadius:3,padding:'8px 10px',transition:'all .2s',
@@ -399,14 +423,14 @@ function SchedItem({item,idx,items,now,day,edit,onChange,onDelete}){
             {st==='current'&&!edit&&<span style={{fontSize:9,padding:'2px 8px',background:'var(--accent)',color:'white',letterSpacing:'.14em',fontWeight:700}}>NOW</span>}
           </div>
           {edit
-            ?<div className="space-y-1 mt-1">
-                <input className="edit-input text-sm font-medium w-full" value={item.label} onChange={e=>onChange({...item,label:e.target.value})} placeholder="ラベル"/>
-                <input className="edit-input text-xs w-full" value={item.note||''} onChange={e=>onChange({...item,note:e.target.value})} placeholder="メモ（任意）"/>
-                <div className="flex gap-2 mt-1">
-                  <select className="edit-list-input text-xs" value={item.icon||'nav'} onChange={e=>onChange({...item,icon:e.target.value})}>
+            ?<div style={{display:'flex',flexDirection:'column',gap:4,marginTop:4}}>
+                <input className="edit-input" style={{fontSize:13}} value={item.label} onChange={e=>onChange({...item,label:e.target.value})} placeholder="ラベル"/>
+                <input className="edit-input" style={{fontSize:11}} value={item.note||''} onChange={e=>onChange({...item,note:e.target.value})} placeholder="メモ（任意）"/>
+                <div style={{display:'flex',gap:6,marginTop:2}}>
+                  <select className="edit-list-input" style={{fontSize:11}} value={item.icon||'nav'} onChange={e=>onChange({...item,icon:e.target.value})}>
                     {['train','bus','nav','home','game','cart','cook'].map(v=><option key={v} value={v}>{v}</option>)}
                   </select>
-                  <button onClick={onDelete} className="px-2 py-1 rounded-lg bg-red-50 text-red-400 text-xs flex items-center gap-1"><TrashIc s={11}/> 削除</button>
+                  <button onClick={onDelete} style={{fontSize:11,color:'#b91c1c',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:1,padding:'2px 8px',cursor:'pointer',display:'flex',alignItems:'center',gap:3,fontFamily:'inherit'}}><TrashIc s={10}/> 削除</button>
                 </div>
               </div>
             :<div>
@@ -423,9 +447,19 @@ function SchedItem({item,idx,items,now,day,edit,onChange,onDelete}){
 function ScheduleTab(){
   const{data,setData,edit}=useData();
   const[now,setNow]=useState(new Date());
+  const[dragIdx,setDragIdx]=useState(null); // {dayKey, idx}
+  const[overIdx,setOverIdx]=useState(null); // {dayKey, idx}
   useEffect(()=>{const id=setInterval(()=>setNow(new Date()),60000);return()=>clearInterval(id);},[]);
 
-  const upDay=(day,items)=>setData({...data,schedule:{...data.schedule,[day]:items}});
+  const upDay=(dayKey,items)=>setData({...data,schedule:{...data.schedule,[dayKey]:items}});
+
+  const move=(dayKey,from,to)=>{
+    if(from===to)return;
+    const arr=[...data.schedule[dayKey]];
+    const[item]=arr.splice(from,1);
+    arr.splice(to,0,item);
+    upDay(dayKey,arr);
+  };
 
   return(
     <div className="tab-content" style={{padding:'36px 28px 28px'}}>
@@ -444,19 +478,29 @@ function ScheduleTab(){
               :<span style={{fontSize:11,color:'var(--sub)',letterSpacing:'.1em'}}>{label}</span>
             }
           </div>
+          {edit&&<p style={{fontSize:9,color:'var(--muted)',letterSpacing:'.14em',marginBottom:10,marginLeft:40}}>⠿ ドラッグで並び替え</p>}
           <div>
             {data.schedule[key].map((it,i)=>(
-              <SchedItem key={i} item={it} idx={i} items={data.schedule[key]} now={now} day={day} edit={edit}
+              <SchedItem key={`${key}-${i}`} item={it} idx={i} items={data.schedule[key]} now={now} day={day} edit={edit}
                 onChange={nit=>{const a=[...data.schedule[key]];a[i]=nit;upDay(key,a);}}
-                onDelete={()=>upDay(key,data.schedule[key].filter((_,idx)=>idx!==i))}/>
+                onDelete={()=>upDay(key,data.schedule[key].filter((_,idx)=>idx!==i))}
+                isDragging={dragIdx&&dragIdx.dayKey===key&&dragIdx.idx===i}
+                isOver={overIdx&&overIdx.dayKey===key&&overIdx.idx===i&&!(dragIdx&&dragIdx.idx===i&&dragIdx.dayKey===key)}
+                onDragStart={()=>setDragIdx({dayKey:key,idx:i})}
+                onDragOver={(v=true)=>setOverIdx(v?{dayKey:key,idx:i}:null)}
+                onDrop={()=>{
+                  if(dragIdx&&dragIdx.dayKey===key)move(key,dragIdx.idx,i);
+                  setDragIdx(null);setOverIdx(null);
+                }}
+              />
             ))}
-            {edit&&(
-              <button onClick={()=>upDay(key,[...data.schedule[key],{time:'00:00',label:'新しい予定',note:'',icon:'nav'}])}
-                style={{display:'flex',alignItems:'center',gap:6,fontSize:11,color:'var(--navy)',background:'none',border:'none',cursor:'pointer',marginTop:8,marginLeft:36,padding:0,fontFamily:'inherit',letterSpacing:'.1em'}}>
-                <PlusIc s={11}/> 予定を追加
-              </button>
-            )}
           </div>
+          {edit&&(
+            <button onClick={()=>upDay(key,[...data.schedule[key],{time:'00:00',label:'新しい予定',note:'',icon:'nav'}])}
+              style={{display:'flex',alignItems:'center',gap:6,fontSize:11,color:'var(--navy)',background:'none',border:'none',cursor:'pointer',marginTop:8,marginLeft:40,padding:0,fontFamily:'inherit',letterSpacing:'.1em'}}>
+              <PlusIc s={11}/> 予定を追加
+            </button>
+          )}
         </div>
       ))}
     </div>
