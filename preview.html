@@ -17,25 +17,32 @@ body{
   font-family:'Hiragino Sans','Noto Sans JP',sans-serif;
   overscroll-behavior:none;
 }
-/* ── Desktop: pretty background + phone frame ── */
+/* ── Desktop/tablet: gradient background + phone frame ── */
 @media(min-width:480px){
+  html,body,#root{height:100vh;}
   body{
     background:linear-gradient(145deg,#fef3e8 0%,#fde8ed 40%,#e8eefe 100%);
     display:flex;align-items:center;justify-content:center;
-    min-height:100vh;padding:24px;
+    padding:20px;
   }
-  #root{height:auto;width:100%;}
+  #root{
+    display:flex;align-items:center;justify-content:center;
+    width:100%;height:100%;
+  }
   .app-shell{
-    height:min(820px,calc(100vh - 48px));
+    /* 画面の90%を使い、最大560px×960px */
+    width:min(90vw,560px);
+    height:min(92vh,960px);
+    max-width:none;
     border-radius:40px;
-    box-shadow:0 32px 90px rgba(0,0,0,.18),0 0 0 8px rgba(255,255,255,.55);
+    box-shadow:0 32px 80px rgba(0,0,0,.20),0 0 0 8px rgba(255,255,255,.6);
     overflow:hidden;
   }
 }
 /* ── App shell: flex column ── */
 .app-shell{
   display:flex;flex-direction:column;
-  height:100%;max-width:430px;margin:0 auto;
+  height:100%;width:100%;max-width:480px;margin:0 auto;
   background:#fdf8f0;position:relative;
   overflow:hidden;
 }
@@ -641,23 +648,44 @@ const TABS=[
 ];
 const COMPS={home:HomeTab,schedule:ScheduleTab,guide:GuideTab,activity:ActivityTab};
 
+/* debounced auto-save indicator */
+function useSaveIndicator(){
+  const[saved,setSaved]=useState(false);
+  const timer=useRef(null);
+  const trigger=()=>{
+    setSaved(true);
+    clearTimeout(timer.current);
+    timer.current=setTimeout(()=>setSaved(false),1800);
+  };
+  return[saved,trigger];
+}
+
 function App(){
   const[tab,setTab]=useState('home');
   const[edit,setEdit]=useState(false);
   const[data,setData]=useLS('stayover-v2',DEFAULT);
+  const[saved,triggerSave]=useSaveIndicator();
 
-  const saveData=(nd)=>{setData(nd);showToast('保存しました ✓');};
-  const toggleEdit=()=>{
-    if(edit)showToast('変更を保存しました ✓');
-    setEdit(e=>!e);
-  };
+  // 変更のたびに即座にlocalStorageへ保存（トースト不要）
+  const saveData=(nd)=>{setData(nd);triggerSave();};
+  const toggleEdit=()=>setEdit(e=>!e);
 
   const Comp=COMPS[tab];
   return(
     <Ctx.Provider value={{data,setData:saveData,edit}}>
       <div className="app-shell">
-        {/* Edit mode banner */}
-        {edit&&<div className="edit-banner">✏️ 編集モード</div>}
+        {/* Edit mode banner with live save indicator */}
+        {edit&&(
+          <div className="edit-banner" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
+            <span>✏️ 編集モード</span>
+            <span style={{
+              fontSize:'10px',padding:'2px 8px',borderRadius:'999px',
+              background:saved?'#22c55e':'transparent',
+              color:saved?'white':'transparent',
+              transition:'all .3s',fontWeight:600,
+            }}>{saved?'保存済み ✓':''}</span>
+          </div>
+        )}
 
         {/* Scrollable content */}
         <main className="app-main">
@@ -670,7 +698,7 @@ function App(){
           {edit?<CheckIc s={20} cx="text-white"/>:<PencilIc s={16} cx="text-white"/>}
         </button>
 
-        {/* Tab bar — not fixed, sits at bottom of flex column */}
+        {/* Tab bar */}
         <nav className="app-nav">
           {TABS.map(({id,label,Ico})=>{
             const on=tab===id;
