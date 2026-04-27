@@ -12,7 +12,7 @@
 *{-webkit-tap-highlight-color:transparent;box-sizing:border-box;}
 html,body,#root{height:100%;margin:0;padding:0;}
 body{
-  background:#fdf8f0;
+  background:#f8f0f6;
   -webkit-font-smoothing:antialiased;
   font-family:'Hiragino Sans','Noto Sans JP',sans-serif;
   overscroll-behavior:none;
@@ -21,20 +21,20 @@ body{
 .app-shell{
   display:flex;flex-direction:column;
   height:100%;width:100%;max-width:480px;margin:0 auto;
-  background:#fdf8f0;position:relative;
+  background:#f8f0f6;position:relative;
   overflow:hidden;
 }
 /* ── Desktop: full screen ── */
 @media(min-width:768px){
   html,body,#root{height:100vh;}
-  body{background:#fdf8f0;}
+  body{background:#f8f0f6;}
   .app-shell{max-width:100%;border-radius:0;box-shadow:none;}
   .app-main > *{max-width:860px;margin-left:auto;margin-right:auto;width:100%;}
 }
 .app-main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .app-nav{
   flex-shrink:0;background:white;
-  border-top:1px solid #f0ede8;display:flex;
+  border-top:1px solid #e8d5e8;display:flex;
   box-shadow:0 -2px 12px rgba(0,0,0,.06);
 }
 .edit-fab{
@@ -47,15 +47,15 @@ body{
 }
 .edit-fab:active{transform:scale(.9);}
 .edit-banner{
-  background:#fff7ed;border-bottom:1px solid #fed7aa;
+  background:#eef2ff;border-bottom:1px solid #c7d2fe;
   text-align:center;padding:6px;font-size:12px;
-  font-weight:700;color:#c2410c;flex-shrink:0;
+  font-weight:700;color:#1e3a6e;flex-shrink:0;
 }
 .tab-content{animation:fadeSlide .18s ease-out both;}
 @keyframes fadeSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.edit-input{background:rgba(255,247,230,.9);border:1.5px dashed #f97316;border-radius:8px;padding:4px 8px;width:100%;font-size:inherit;font-family:inherit;color:inherit;outline:none;resize:none;}
-.edit-input:focus{border-color:#fb923c;background:#fff7ed;}
-.edit-list-input{background:rgba(255,247,230,.8);border:1px dashed #f97316;border-radius:6px;padding:3px 6px;font-size:.75rem;font-family:inherit;outline:none;flex:1;}
+.edit-input{background:rgba(238,242,255,.9);border:1.5px dashed #6366f1;border-radius:8px;padding:4px 8px;width:100%;font-size:inherit;font-family:inherit;color:inherit;outline:none;resize:none;}
+.edit-input:focus{border-color:#4f46e5;background:#eef2ff;}
+.edit-list-input{background:rgba(238,242,255,.8);border:1px dashed #6366f1;border-radius:6px;padding:3px 6px;font-size:.75rem;font-family:inherit;outline:none;flex:1;}
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#1c1917;color:white;padding:8px 18px;border-radius:999px;font-size:12px;z-index:9999;pointer-events:none;animation:toastIn .2s ease-out;}
 @keyframes toastIn{from{opacity:0;top:8px}to{opacity:1;top:16px}}
 ::-webkit-scrollbar{display:none;}
@@ -173,16 +173,16 @@ function EL({items,onChange,placeholder='アイテム'}){
   const{edit}=useData();
   if(!edit)return null;
   return(
-    <div className="mt-3 space-y-1.5 pt-3 border-t border-orange-100">
-      <p className="text-xs text-orange-400 font-medium mb-2">リストを編集</p>
+    <div className="mt-3 space-y-1.5 pt-3 border-t border-pink-100">
+      <p className="text-xs text-indigo-900 font-medium mb-2">リストを編集</p>
       {items.map((it,i)=>(
         <div key={i} className="flex items-center gap-2">
           <input className="edit-list-input" value={it} onChange={e=>{const n=[...items];n[i]=e.target.value;onChange(n);}} placeholder={placeholder}/>
           <button onClick={()=>onChange(items.filter((_,idx)=>idx!==i))} className="w-6 h-6 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0"><TrashIc s={11} cx="text-red-400"/></button>
         </div>
       ))}
-      <button onClick={()=>onChange([...items,''])} className="flex items-center gap-1.5 text-xs text-orange-500 mt-1 font-medium">
-        <PlusIc s={12} cx="text-orange-400"/> 追加
+      <button onClick={()=>onChange([...items,''])} className="flex items-center gap-1.5 text-xs text-indigo-900 mt-1 font-medium">
+        <PlusIc s={12} cx="text-indigo-900"/> 追加
       </button>
     </div>
   );
@@ -239,24 +239,24 @@ function HomeTab({onNavigate}){
         <h1 className="text-xl font-bold text-stone-800">
           <ET val={hd.title} onChange={v=>upHome({title:v})} placeholder="タイトル"/>
         </h1>
-        <p className="text-sm font-semibold" style={{color:'#fb7185'}}>
+        <p className="text-sm font-semibold" style={{color:'#f472b6'}}>
           <ET val={hd.subtitle} onChange={v=>upHome({subtitle:v})} placeholder="サブタイトル"/>
         </p>
         <p className="text-xs text-stone-400">
           <ET val={hd.dateLabel} onChange={v=>upHome({dateLabel:v})} placeholder="日付"/>
         </p>
-        {edit&&<div className="mt-2"><p className="text-xs text-orange-400 mb-1">目標日時</p><input className="edit-input text-xs text-center" value={hd.targetDate} onChange={e=>upHome({targetDate:e.target.value})} placeholder="2025-05-05T09:50:00"/></div>}
+        {edit&&<div className="mt-2"><p className="text-xs text-indigo-900 mb-1">目標日時</p><input className="edit-input text-xs text-center" value={hd.targetDate} onChange={e=>upHome({targetDate:e.target.value})} placeholder="2025-05-05T09:50:00"/></div>}
       </div>
 
       {/* Countdown / Now */}
       {diff>0&&!isEvent?(
-        <div className="rounded-2xl p-5 border text-center" style={{background:'linear-gradient(135deg,#fff1f2,#fffbeb)',borderColor:'#fecdd3'}}>
-          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{color:'#fb7185'}}>✈️ Countdown</p>
+        <div className="rounded-2xl p-5 border text-center" style={{background:'linear-gradient(135deg,#fdf2f8,#fce7f3)',borderColor:'#fbcfe8'}}>
+          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{color:'#f472b6'}}>✈️ Countdown</p>
           <div className="flex justify-center gap-4">
             {[['日',d],['時',h],['分',m],['秒',s]].map(([u,v])=>(
               <div key={u} className="flex flex-col items-center min-w-[44px]">
                 <div className="bg-white rounded-xl w-full py-2 shadow-sm">
-                  <span className="text-2xl font-bold tabular-nums" style={{color:'#f43f5e'}}>{pad(v)}</span>
+                  <span className="text-2xl font-bold tabular-nums" style={{color:'#db2777'}}>{pad(v)}</span>
                 </div>
                 <span className="text-xs text-stone-400 mt-1">{u}</span>
               </div>
@@ -265,15 +265,15 @@ function HomeTab({onNavigate}){
           <p className="text-xs text-stone-400 mt-3">{hd.dateLabel} まで</p>
         </div>
       ):isEvent&&curItem?(
-        <div className="rounded-2xl p-4 border" style={{background:'linear-gradient(135deg,#fff1f2,#fffbeb)',borderColor:'#fda4af'}}>
+        <div className="rounded-2xl p-4 border" style={{background:'linear-gradient(135deg,#fdf2f8,#fce7f3)',borderColor:'#f9a8d4'}}>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{background:'#fb7185'}}>NOW</span>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{background:'#f472b6'}}>NOW</span>
             <span className="text-xs text-stone-400">現在の予定</span>
           </div>
           <p className="text-base font-bold text-stone-800">{curItem.time} — {curItem.label}</p>
         </div>
       ):isEvent?(
-        <div className="rounded-2xl p-4 border border-amber-100 bg-amber-50 text-center">
+        <div className="rounded-2xl p-4 border border-pink-100 bg-pink-50 text-center">
           <p className="text-sm text-stone-600">全スケジュール完了！お疲れさま 🎊</p>
         </div>
       ):null}
@@ -281,8 +281,8 @@ function HomeTab({onNavigate}){
       {/* Quick cards */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          {id:'schedule',label:'スケジュール',sub:'1泊2日の行程',Icon:<CalIc cx="text-sky-400" s={22}/>, grad:'from-sky-50 to-sky-100/50'},
-          {id:'guide',label:'アパート案内',sub:'Wi-Fi・設備情報',Icon:<MapPinIc cx="text-emerald-400" s={22}/>, grad:'from-emerald-50 to-emerald-100/50'},
+          {id:'schedule',label:'スケジュール',sub:'1泊2日の行程',Icon:<CalIc cx="text-indigo-800" s={22}/>, grad:'from-indigo-50 to-indigo-100/50'},
+          {id:'guide',label:'アパート案内',sub:'Wi-Fi・設備情報',Icon:<MapPinIc cx="text-pink-400" s={22}/>, grad:'from-pink-50 to-pink-100/50'},
         ].map(({id,label,sub,Icon,grad})=>(
           <button key={id} onClick={()=>onNavigate(id)}
             className={`bg-gradient-to-br ${grad} rounded-2xl p-4 border border-white text-left active:scale-95 transition-transform shadow-sm`}>
@@ -298,7 +298,7 @@ function HomeTab({onNavigate}){
         <p className="text-sm text-stone-600 leading-relaxed">
           <ET val={hd.message} onChange={v=>upHome({message:v})} multi placeholder="メッセージ"/>
         </p>
-        <button onClick={()=>onNavigate('activity')} className="mt-3 flex items-center gap-1 text-xs font-medium" style={{color:'#fb7185'}}>
+        <button onClick={()=>onNavigate('activity')} className="mt-3 flex items-center gap-1 text-xs font-medium" style={{color:'#f472b6'}}>
           アクティビティを見る <ChevRIc/>
         </button>
       </div>
@@ -316,7 +316,7 @@ function SchedItem({item,idx,items,now,day,edit,onChange,onDelete}){
     <div className="flex gap-3">
       <div className="flex flex-col items-center">
         <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10 transition-all"
-          style={st==='current'?{background:'#fb7185',boxShadow:'0 4px 14px #fda4af80',outline:'4px solid #ffe4e6'}:
+          style={st==='current'?{background:'#f472b6',boxShadow:'0 4px 14px #f9a8d480',outline:'4px solid #fce7f3'}:
                  st==='past'?{background:'#e7e5e4'}:{background:'white',border:'2px solid #e7e5e4'}}>
           <span style={{color:st==='current'?'white':st==='past'?'#a8a29e':'#a8a29e',display:'flex'}}>
             <SchedIcon type={item.icon} size={14}/>
@@ -326,13 +326,13 @@ function SchedItem({item,idx,items,now,day,edit,onChange,onDelete}){
       </div>
       <div className={`flex-1 pb-3 ${st==='past'&&!edit?'opacity-40':''}`}>
         <div className={`rounded-2xl p-3 transition-all ${st==='current'?'border shadow-sm':''}`}
-          style={st==='current'?{background:'#fff1f2',borderColor:'#fda4af'}:{}}>
+          style={st==='current'?{background:'#fdf2f8',borderColor:'#f9a8d4'}:{}}>
           <div className="flex items-baseline gap-2">
             {edit
               ?<input className="edit-input text-sm font-bold tabular-nums w-20" value={item.time} onChange={e=>onChange({...item,time:e.target.value})}/>
-              :<span className="text-sm font-bold tabular-nums" style={{color:st==='current'?'#f43f5e':'#78716c'}}>{item.time}</span>
+              :<span className="text-sm font-bold tabular-nums" style={{color:st==='current'?'#db2777':'#78716c'}}>{item.time}</span>
             }
-            {st==='current'&&!edit&&<span className="text-xs px-2 py-0.5 rounded-full font-bold text-white" style={{background:'#fb7185',fontSize:'10px'}}>NOW</span>}
+            {st==='current'&&!edit&&<span className="text-xs px-2 py-0.5 rounded-full font-bold text-white" style={{background:'#f472b6',fontSize:'10px'}}>NOW</span>}
           </div>
           {edit
             ?<div className="space-y-1 mt-1">
@@ -368,8 +368,8 @@ function ScheduleTab(){
       <h2 className="text-lg font-bold text-stone-800 mb-0.5">Schedule</h2>
       <p className="text-xs text-stone-400 mb-6">1泊2日の旅程</p>
 
-      {[{key:'day1',day:5,label:data.schedule.day1Label,color:'#fb7185',labelKey:'day1Label'},
-        {key:'day2',day:6,label:data.schedule.day2Label,color:'#38bdf8',labelKey:'day2Label'}].map(({key,day,label,color,labelKey})=>(
+      {[{key:'day1',day:5,label:data.schedule.day1Label,color:'#f472b6',labelKey:'day1Label'},
+        {key:'day2',day:6,label:data.schedule.day2Label,color:'#1e3a6e',labelKey:'day2Label'}].map(({key,day,label,color,labelKey})=>(
         <div key={key} className="mb-7">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-white text-xs font-bold px-3 py-1 rounded-full" style={{background:color}}>
@@ -388,8 +388,8 @@ function ScheduleTab(){
             ))}
             {edit&&(
               <button onClick={()=>upDay(key,[...data.schedule[key],{time:'00:00',label:'新しい予定',note:'',icon:'nav'}])}
-                className="flex items-center gap-2 text-xs text-orange-500 font-medium mt-2 ml-10">
-                <PlusIc s={12} cx="text-orange-400"/> 予定を追加
+                className="flex items-center gap-2 text-xs text-indigo-900 font-medium mt-2 ml-10">
+                <PlusIc s={12} cx="text-indigo-900"/> 予定を追加
               </button>
             )}
           </div>
@@ -424,7 +424,7 @@ function GuideTab(){
 
       {/* Wi-Fi */}
       <div className="bg-white rounded-2xl p-5 border border-stone-100 shadow-sm space-y-3">
-        <div className="flex items-center gap-2"><WifiIc cx="text-sky-400"/><h3 className="text-sm font-bold text-stone-700">Wi-Fi</h3></div>
+        <div className="flex items-center gap-2"><WifiIc cx="text-indigo-800"/><h3 className="text-sm font-bold text-stone-700">Wi-Fi</h3></div>
         <div className="space-y-2.5">
           {[['SSID','ssid'],['Password','password']].map(([label,key])=>(
             <div key={key}>
@@ -444,7 +444,7 @@ function GuideTab(){
         <h3 className="text-sm font-bold text-stone-700 mb-3">アメニティ</h3>
         <div className="grid grid-cols-2 gap-2">
           {gd.amenities.map((a,i)=>(
-            <div key={i} className="flex items-center gap-2 rounded-xl px-3 py-2.5 border" style={{background:'#ecfdf5',borderColor:'#a7f3d0'}}>
+            <div key={i} className="flex items-center gap-2 rounded-xl px-3 py-2.5 border" style={{background:'#fdf2f8',borderColor:'#fbcfe8'}}>
               <span className="text-xs text-stone-700 flex-1">{a}</span>
               <CheckIc s={12} cx="text-emerald-400"/>
             </div>
@@ -458,7 +458,7 @@ function GuideTab(){
         <h3 className="text-sm font-bold text-stone-700">ハウスルール</h3>
         {gd.rules.map((r,i)=>(
           <div key={i} className="flex gap-3">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-sm" style={{background:'#fffbeb'}}>📌</div>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-sm" style={{background:'#fce7f3'}}>📌</div>
             <div className="flex-1">
               {edit
                 ?<div className="space-y-1">
@@ -476,8 +476,8 @@ function GuideTab(){
         ))}
         {edit&&(
           <button onClick={()=>upGuide({rules:[...gd.rules,{title:'新しいルール',body:''}]})}
-            className="flex items-center gap-1.5 text-xs text-orange-500 font-medium">
-            <PlusIc s={12} cx="text-orange-400"/> ルールを追加
+            className="flex items-center gap-1.5 text-xs text-indigo-900 font-medium">
+            <PlusIc s={12} cx="text-indigo-900"/> ルールを追加
           </button>
         )}
       </div>
@@ -541,11 +541,11 @@ function GameScore(){
 
   return(
     <div className="bg-white rounded-2xl p-5 border border-stone-100 shadow-sm space-y-4">
-      <div className="flex items-center gap-2"><GameIc cx="text-purple-400"/><h3 className="text-sm font-bold text-stone-700">桃鉄・ボドゲ戦績</h3></div>
+      <div className="flex items-center gap-2"><GameIc cx="text-indigo-900"/><h3 className="text-sm font-bold text-stone-700">桃鉄・ボドゲ戦績</h3></div>
       <div className="flex gap-2 flex-wrap">
         {['桃鉄','カタン','ナナ','UNO'].map(g=>(
           <button key={g} onClick={()=>setGame(g)} className="text-xs px-3 py-1.5 rounded-full border transition-all font-medium"
-            style={{background:game===g?'#a78bfa':'white',borderColor:game===g?'#a78bfa':'#e7e5e4',color:game===g?'white':'#78716c'}}>{g}</button>
+            style={{background:game===g?'#1e3a6e':'white',borderColor:game===g?'#1e3a6e':'#e7e5e4',color:game===g?'white':'#78716c'}}>{g}</button>
         ))}
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -560,7 +560,7 @@ function GameScore(){
             <div className="flex items-center justify-center gap-2">
               <button onClick={()=>upWins(i,-1)} className="w-8 h-8 rounded-full flex items-center justify-center border border-stone-200 bg-white active:scale-90 transition-transform"><MinusIc cx="text-stone-500"/></button>
               <span className="text-2xl font-bold text-stone-800 tabular-nums w-10 text-center">{p.wins}</span>
-              <button onClick={()=>upWins(i,1)} className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform" style={{background:'#a78bfa'}}><PlusIc cx="text-white"/></button>
+              <button onClick={()=>upWins(i,1)} className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform" style={{background:'#1e3a6e'}}><PlusIc cx="text-white"/></button>
             </div>
             <p className="text-xs text-stone-400 text-center">勝利数</p>
             <input type="text" placeholder="資産額を入力" value={p.asset} onChange={e=>upAsset(i,e.target.value)}
@@ -568,7 +568,7 @@ function GameScore(){
           </div>
         ))}
       </div>
-      <button onClick={addLog} className="w-full text-white text-sm font-bold py-3 rounded-2xl active:scale-98 transition-transform flex items-center justify-center gap-2 shadow-sm" style={{background:'linear-gradient(135deg,#a78bfa,#8b5cf6)'}}>
+      <button onClick={addLog} className="w-full text-white text-sm font-bold py-3 rounded-2xl active:scale-98 transition-transform flex items-center justify-center gap-2 shadow-sm" style={{background:'linear-gradient(135deg,#1e3a6e,#8b5cf6)'}}>
         <TrophyIc/> このゲームを記録する
       </button>
       {logs.length>0&&(
@@ -577,7 +577,7 @@ function GameScore(){
           {logs.map((l,i)=>(
             <div key={i} className="flex items-center justify-between rounded-xl px-3 py-2.5" style={{background:'#fafaf9',border:'1px solid #f0ede8'}}>
               <div><p className="text-xs font-bold text-stone-700">{l.game}</p><p className="text-xs text-stone-400">{l.s0} / {l.s1}</p></div>
-              <div className="text-right"><p className="text-xs font-bold" style={{color:'#a78bfa'}}>{l.winner}</p><p className="text-xs text-stone-400">{l.time}</p></div>
+              <div className="text-right"><p className="text-xs font-bold" style={{color:'#1e3a6e'}}>{l.winner}</p><p className="text-xs text-stone-400">{l.time}</p></div>
             </div>
           ))}
         </div>
@@ -616,8 +616,8 @@ function ActivityTab(){
       <div><h2 className="text-lg font-bold text-stone-800 mb-0.5">Activity</h2><p className="text-xs text-stone-400">お楽しみコーナー</p></div>
       <ShoppingList/>
       <GameScore/>
-      <GachaCard title="🍳 何作る？ガチャ" listKey="recipes" color="#fb7185" bg="#fff1f2" border="#fecdd3"/>
-      <GachaCard title="🎬 何観る？ガチャ"  listKey="movies"  color="#38bdf8" bg="#f0f9ff" border="#bae6fd"/>
+      <GachaCard title="🍳 何作る？ガチャ" listKey="recipes" color="#f472b6" bg="#fdf2f8" border="#fbcfe8"/>
+      <GachaCard title="🎬 何観る？ガチャ"  listKey="movies"  color="#1e3a6e" bg="#eef2ff" border="#c7d2fe"/>
     </div>
   );
 }
@@ -679,7 +679,7 @@ function App(){
 
         {/* Floating edit button */}
         <button onClick={toggleEdit} className="edit-fab"
-          style={{background:edit?'#f97316':'#1c1917',color:'white'}}>
+          style={{background:edit?'#1e3a6e':'#1c1917',color:'white'}}>
           {edit?<CheckIc s={20} cx="text-white"/>:<PencilIc s={16} cx="text-white"/>}
         </button>
 
@@ -689,10 +689,10 @@ function App(){
             const on=tab===id;
             return(
               <button key={id} onClick={()=>setTab(id)}
-                style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',paddingTop:'8px',paddingBottom:'12px',gap:'3px',border:'none',background:'none',cursor:'pointer',transition:'color .15s',color:on?'#fb7185':'#a8a29e'}}>
+                style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',paddingTop:'8px',paddingBottom:'12px',gap:'3px',border:'none',background:'none',cursor:'pointer',transition:'color .15s',color:on?'#f472b6':'#a8a29e'}}>
                 <Ico s={21} sw={on?2.4:1.8}/>
                 <span style={{fontSize:'10px',fontWeight:on?700:400,letterSpacing:'0.04em'}}>{label}</span>
-                {on&&<span style={{width:'4px',height:'4px',borderRadius:'50%',background:'#fb7185',marginTop:'-1px'}}/>}
+                {on&&<span style={{width:'4px',height:'4px',borderRadius:'50%',background:'#f472b6',marginTop:'-1px'}}/>}
               </button>
             );
           })}
