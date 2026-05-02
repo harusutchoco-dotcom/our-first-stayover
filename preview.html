@@ -503,6 +503,116 @@ function ScheduleTab(){
           )}
         </div>
       ))}
+
+      <PhotoSection/>
+    </div>
+  );
+}
+
+/* ──────────────────────────────
+   PHOTO SECTION
+────────────────────────────── */
+function PhotoSection(){
+  const{edit}=useData();
+  const[photos,setPhotos]=useLS('stayover-photos',[]);
+  const[lightbox,setLightbox]=useState(null);
+  const fileRef=useRef(null);
+
+  const resize=file=>new Promise(resolve=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const MAX=1200;
+      let w=img.width,h=img.height;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+      const c=document.createElement('canvas');
+      c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg',0.82));
+    };
+    img.src=url;
+  });
+
+  const handleFiles=async e=>{
+    const files=Array.from(e.target.files);
+    const added=[];
+    for(const f of files){
+      const dataUrl=await resize(f);
+      added.push({id:Date.now()+Math.random(),dataUrl,caption:''});
+    }
+    setPhotos(p=>[...p,...added]);
+    e.target.value='';
+  };
+
+  const upCaption=(id,caption)=>setPhotos(p=>p.map(x=>x.id===id?{...x,caption}:x));
+  const del=(id)=>setPhotos(p=>p.filter(x=>x.id!==id));
+
+  return(
+    <div style={{marginTop:36,borderTop:'2px solid var(--border)',paddingTop:28}}>
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
+        <div>
+          <p style={{fontSize:10,letterSpacing:'.24em',color:'var(--sub)',fontWeight:700,marginBottom:4}}>MEMORIES</p>
+          <p style={{fontSize:18,letterSpacing:'.12em',color:'var(--text)',fontWeight:400}}>思い出フォト</p>
+        </div>
+        <label style={{
+          fontSize:11,padding:'8px 16px',background:'var(--accent)',color:'white',
+          borderRadius:2,cursor:'pointer',letterSpacing:'.14em',fontFamily:'inherit',userSelect:'none',
+        }}>
+          ＋ 写真を追加
+          <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleFiles} style={{display:'none'}}/>
+        </label>
+      </div>
+
+      {photos.length===0&&(
+        <div style={{padding:'40px 0',textAlign:'center',border:'1px dashed var(--border)',borderRadius:2,background:'var(--surface)'}}>
+          <p style={{fontSize:13,color:'var(--sub)',letterSpacing:'.1em'}}>写真はまだ追加されていません</p>
+          <p style={{fontSize:11,color:'var(--muted)',marginTop:8,letterSpacing:'.08em'}}>上のボタンから追加してください</p>
+        </div>
+      )}
+
+      {/* Grid */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',gap:10}}>
+        {photos.map(p=>(
+          <div key={p.id} style={{position:'relative'}}>
+            <div style={{position:'relative',aspectRatio:'1',overflow:'hidden',borderRadius:2,border:'1px solid var(--border)',cursor:'pointer'}}
+              onClick={()=>setLightbox(p)}>
+              <img src={p.dataUrl} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+            </div>
+            <button onClick={e=>{e.stopPropagation();del(p.id);}} style={{
+              position:'absolute',top:5,right:5,
+              background:'rgba(26,21,16,.6)',color:'white',border:'none',
+              borderRadius:1,width:22,height:22,cursor:'pointer',fontSize:11,
+              display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1,
+            }}>✕</button>
+            {edit?(
+              <input value={p.caption} onChange={e=>upCaption(p.id,e.target.value)}
+                placeholder="キャプション…"
+                style={{width:'100%',fontSize:11,padding:'4px 6px',border:'1px solid var(--border)',
+                  borderTop:'none',borderRadius:'0 0 2px 2px',background:'var(--surface)',
+                  fontFamily:'inherit',outline:'none',color:'var(--text)',letterSpacing:'.04em',
+                  boxSizing:'border-box',
+                }}/>
+            ):p.caption?(
+              <p style={{fontSize:10,color:'var(--sub)',textAlign:'center',marginTop:4,letterSpacing:'.06em',lineHeight:1.4}}>{p.caption}</p>
+            ):null}
+          </div>
+        ))}
+      </div>
+
+      {/* Lightbox */}
+      {lightbox&&(
+        <div onClick={()=>setLightbox(null)} style={{
+          position:'fixed',inset:0,background:'rgba(26,21,16,.9)',
+          display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+          zIndex:9999,cursor:'pointer',padding:20,
+        }}>
+          <img src={lightbox.dataUrl} style={{maxWidth:'100%',maxHeight:'85vh',objectFit:'contain',borderRadius:2}}/>
+          {lightbox.caption&&<p style={{color:'rgba(255,255,255,.7)',fontSize:12,marginTop:12,letterSpacing:'.08em'}}>{lightbox.caption}</p>}
+          <p style={{color:'rgba(255,255,255,.4)',fontSize:10,marginTop:8,letterSpacing:'.12em'}}>タップして閉じる</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -560,50 +670,6 @@ function GuideTab(){
         {!edit&&<p style={{fontSize:10,color:'var(--muted)',marginTop:10,letterSpacing:'.1em'}}>タップでコピー</p>}
       </div>
 
-      {/* Amenities */}
-      <div style={S.card}>
-        <p style={{fontSize:10,fontWeight:700,letterSpacing:'.2em',color:'var(--navy)',marginBottom:12}}>アメニティ</p>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-          {gd.amenities.map((a,i)=>(
-            <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',border:'1px solid var(--border-lt)',borderRadius:2,background:'var(--bg)'}}>
-              <span style={{fontSize:12,color:'var(--sub)',flex:1,letterSpacing:'.04em'}}>{a}</span>
-              <CheckIc s={11} cx="text-emerald-600"/>
-            </div>
-          ))}
-        </div>
-        <EL items={gd.amenities} onChange={v=>upGuide({amenities:v})} placeholder="アメニティ名"/>
-      </div>
-
-      {/* Rules */}
-      <div style={S.card}>
-        <p style={{fontSize:10,fontWeight:700,letterSpacing:'.2em',color:'var(--navy)',marginBottom:14}}>ハウスルール</p>
-        <div style={{display:'flex',flexDirection:'column',gap:14}}>
-        {gd.rules.map((r,i)=>(
-          <div key={i} style={{display:'flex',gap:12}}>
-            <div style={{width:28,height:28,borderRadius:2,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:13,background:'var(--bg)',border:'1px solid var(--border-lt)'}}>📌</div>
-            <div style={{flex:1}}>
-              {edit
-                ?<div style={{display:'flex',flexDirection:'column',gap:4}}>
-                    <input className="edit-input" style={{fontSize:12,fontWeight:700}} value={r.title} onChange={e=>{const n=[...gd.rules];n[i]={...r,title:e.target.value};upGuide({rules:n});}}/>
-                    <textarea className="edit-input" style={{fontSize:11}} rows={2} value={r.body} onChange={e=>{const n=[...gd.rules];n[i]={...r,body:e.target.value};upGuide({rules:n});}}/>
-                    <button onClick={()=>upGuide({rules:gd.rules.filter((_,idx)=>idx!==i)})} style={{fontSize:11,color:'#b91c1c',background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:4,padding:0,fontFamily:'inherit'}}><TrashIc s={11}/> 削除</button>
-                  </div>
-                :<div>
-                    <p style={{fontSize:12,fontWeight:700,color:'var(--text)',letterSpacing:'.06em'}}>{r.title}</p>
-                    <p style={{fontSize:11,color:'var(--sub)',marginTop:3,lineHeight:1.7,letterSpacing:'.04em'}}>{r.body}</p>
-                  </div>
-              }
-            </div>
-          </div>
-        ))}
-        </div>
-        {edit&&(
-          <button onClick={()=>upGuide({rules:[...gd.rules,{title:'新しいルール',body:''}]})}
-            style={{display:'flex',alignItems:'center',gap:6,fontSize:11,color:'var(--navy)',background:'none',border:'none',cursor:'pointer',marginTop:10,padding:0,fontFamily:'inherit',letterSpacing:'.1em'}}>
-            <PlusIc s={11}/> ルールを追加
-          </button>
-        )}
-      </div>
     </div>
   );
 }
